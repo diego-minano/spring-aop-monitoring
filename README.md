@@ -1,0 +1,3 @@
+- How AOP works
+- How to use AOP to register metrics
+- How to handle the order of different interceptors over the same JointPoint
