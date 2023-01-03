@@ -1,23 +1,32 @@
 package net.dms.aop.monitoring;
 
-import lombok.extern.slf4j.Slf4j;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component
 @Aspect
-@Slf4j
+@Component
 public class MetricAspect {
+    @Autowired
+    MeterRegistry meterRegistry;
 
     @Around("within(net.dms.aop.service..*)")
-    public Object registerPerformance(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+    public Object timeRegister(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+        Timer timer = Timer.builder(proceedingJoinPoint.getSignature().toShortString().split("\\.")[0])
+                .tag("operation", proceedingJoinPoint.getSignature().getName())
+                .register(meterRegistry);
+
+        Timer.Sample sample = Timer.start(meterRegistry);
         try {
-            log.info("-->intercepted by AOP");
             return proceedingJoinPoint.proceed();
         } finally {
-            log.info("-->work done");
+            sample.stop(timer);
         }
     }
+
+
 }
